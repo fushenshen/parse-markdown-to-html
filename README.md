@@ -2,8 +2,8 @@
 
 ###how to use:
 
-in  main.cpp,replace  ``filepath``with your file
-then compile and run main.cpp ,then get  the console out and cp to a html file
+in  main.cpp,replace  `filepath` and `outpath` with your file
+then compile and run main.cpp ,then get the  outpath.html
 
 
 ###what i want to
