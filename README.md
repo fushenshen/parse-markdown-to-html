@@ -2,8 +2,10 @@
 
 ###how to use:
 
-in the main.cpp,replace   ``` ifstream myfile (“somefile”)```  with your file
+in  main.cpp,replace  ``filepath``with your file
 then compile and run main.cpp ,then get  the console out and cp to a html file
+
+![](http://www.fssfssss.com/examples/parser.png)
 
 ###what i want to
 
