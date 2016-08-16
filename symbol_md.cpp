@@ -7,19 +7,38 @@
 //
 
 #include "symbol_md.hpp"
-void string_removespace(std::string &str){
+std::deque<std::string> dq;
+inline void string_removespace(std::string &str){
   str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
 }
-
+bool ref_complex(std::string &str){
+    if(str.front()=='>'){
+        auto string_final= read_all(std::string(str.begin()+1,str.end()));
+        auto index=str.find_first_of ("#");
+        if(index<str.length()){
+            auto num_sharp=str.find_last_of("#")-index;
+            string_final="<h"+std::to_string(num_sharp) +">"+string_final+"</h"+std::to_string(num_sharp)+">"+"\n</blockquote>";
+            
+        }
+        else {
+       string_final="<blockquote>\n"+string_final+"\n</blockquote>";
+        }
+        string_removespace(string_final);
+        std::cout<<string_final<<std::endl;
+        dq.push_back(string_final);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
 std::vector<char >vec{'#','*','-','+','.','>','`','=','~','_'};
 int blode_num=0;
 std::string code_string;
-std::string::iterator it;
-std::string::iterator one_star=code_string.begin();
-std::string::iterator tmp_it;
+std::string num_string;
 std::string ves;
 int flag=0;
-bool read_code(const  std::string& line){
+bool read_code(  std::string& line){
     if(line=="```"){
         flag++;
         if(flag>1){
@@ -29,13 +48,15 @@ bool read_code(const  std::string& line){
     }
     if(flag==1){
         if(line!="```"){
+            trans_meaning(line);
             ves+=line+"\n";
         }
           return true;
     }
     else {
         if(!ves.empty()){
-            ves="<pre>\n"+ves+"</pre>\n";
+            ves="<div><pre><code>\n"+ves+"</div></pre></code>\n\n";
+            dq.push_back(ves);
             std::cout<<ves;
             ves.clear();
         }
@@ -50,13 +71,15 @@ void analyze_sentence(std::string &str){
     if(read_ui(str)){
         return;
     }
+  
     if(read_pic_link(str)){
+        
         return;
     }
-    if(read_ref(str)){
+    if(ref_complex (str)){
         return;
     }
-    if(read_code(str)){
+    if(  read_code(str)){
         return;
     }
     if(read_pic(str)){
@@ -68,23 +91,12 @@ void analyze_sentence(std::string &str){
     }
     else{
         std::string all_str=read_all(str);
+        dq.push_back(all_str);
         std::cout<<all_str<<std::endl;
     }
 
 }
-void common_sentence(std::string::iterator it){
-    tmp_it=it;
-    while(*it++){
-        auto index=*std::find(vec.begin(), vec.end(), *it);
-        if(index){
-            break;
-        }
-    }
-    std::string content_=std::string(tmp_it,it);
-    std::cout<<"common "<<content_<<std::endl;
-    it--;
-//    std::cout<<"itititi"<<*(it+1)<<std::endl;
-}
+
 bool read_pic(const std::string &fname){
     
         std::string filename;
@@ -99,16 +111,18 @@ bool read_pic(const std::string &fname){
             return  false;
         }
         std::smatch match;
-        std::regex pieces_pic("(https|http):[0-9a-zA-Z_/.]*.(jpg|jpeg|png)");
+
         std::string link_content;
         //是图片
-        if(std::regex_match(suffix,match,pieces_pic)){
+    if(regex_builder(fname, match, regex_node::pic)){
             link_content="<img src=\""+suffix+"\"/>";
+            dq.push_back(link_content);
             std::cout<<link_content<<std::endl;
         }
         //是网址
         else {
             link_content="<a href=\""+suffix+"\">" +filename+"</a>";
+             dq.push_back(link_content);
             std::cout<<link_content<<std::endl;
         }
     
@@ -120,20 +134,18 @@ bool read_ui(const std::string &ul_string){
     //    std::regex pieces_pic("((!|-|\\*))(\\s)(.*)");
     std::string filename;
     std::string suffix;
-    std::regex pieces_regex("((!|-|\\*|\\+))(\\s.*)");
     std::smatch pieces_match;
-    if (std::regex_match(ul_string, pieces_match, pieces_regex)) {
+    if (regex_builder(ul_string, pieces_match, regex_node::ui)) {
         suffix=pieces_match[3].str();
-//        std::cout<<pieces_match[0].str()<<std::endl;
     
     //这一步在后续步骤中，不用取消空格
     string_removespace(suffix);
         suffix=read_all(suffix);
-        //<li><p>heloop</p></li>
         
     suffix="<li>"+suffix+"</li>";
     auto index=suffix.find_first_of("<li>");
     suffix= suffix.substr(index);
+    dq.push_back(suffix);
     std::cout<<suffix<<std::endl;
     return  true;
 }
@@ -142,33 +154,16 @@ bool read_ui(const std::string &ul_string){
 
 bool read_sharp(const std::string &str){
     std::smatch match;
-    std::regex pieces_pic("(#)+(.*)");
-    // ####
-    if(std::regex_match(str,match,pieces_pic)){
+    if(regex_builder(str, match, regex_node::sharp)){
         std::string sharp_str=match[2].str();
         auto num=str.find_last_of("#")+1;
         string_removespace(sharp_str);
-        sharp_str="<h"+std::to_string(num)+">"+sharp_str+"</h>";
+        sharp_str="<h"+std::to_string(num)+">"+sharp_str+"</h"+std::to_string(num)+">";
+        dq.push_back(sharp_str);
         std::cout<<sharp_str<<std::endl;
         return true;
     }
     return  false;
-}
-
-bool read_ref(std::string &str){
-    //>.*
-    std::smatch match;
-    std::regex pieces_pic(">.*");
-    if(std::regex_match(str,match,pieces_pic)){
-        
-        std::string sharp_str=match.str();
-        sharp_str.erase(sharp_str.begin());
-        sharp_str="<blockquote><p>"+sharp_str+"</p></blockquote>";
-        string_removespace(sharp_str);
-        std::cout<<sharp_str<<std::endl;
-        return  true;
-    }
-    return false;
 }
 
 bool read_pic_link(const std::string fname){
@@ -177,35 +172,32 @@ bool read_pic_link(const std::string fname){
     std::string suffix;
     std::string begin_;
     std::string end_;
-    std::regex pieces_regex("(.*)!?\\[(.*)\\]\\(((.+))\\)(.*)");
     std::smatch pieces_match;
-    if (std::regex_match(fname, pieces_match, pieces_regex)) {
+    if (regex_builder(fname, pieces_match, regex_node::pic_link)) {
         filename=pieces_match[1].str();
         suffix=pieces_match[2].str();
-        //        std::cout<<pieces_match[1].str()<<std::endl;//前缀 可能以！开头
         begin_=pieces_match[1].str();
-        //        std::cout<<pieces_match[2].str()<<std::endl;//名称
         filename=pieces_match[2].str();
-        //        std::cout<<pieces_match[3].str()<<std::endl;//文件suffix
         suffix=pieces_match[3].str();
-        //        std::cout<<pieces_match[5].str()<<std::endl;    //后缀
         end_=pieces_match[5].str();
     }
     else {
         return  false;
     }
     std::smatch match;
-    std::regex pieces_pic("(https|http):[0-9a-zA-Z_/.]*.(jpg|jpeg|png)");
+    
     std::string link_content;
     //是图片
-    if(std::regex_match(suffix,match,pieces_pic)){
+    if(regex_builder(suffix, match, regex_node::pic)){
         link_content="<img src=\""+suffix+"\"/>";
+         dq.push_back(link_content);
         std::cout<<link_content<<std::endl;
         
     }
     //是网址
     else {
         link_content="<a href=\""+suffix+"\">" +filename+"</a>";
+         dq.push_back(link_content);
         std::cout<<link_content;
     }
     if(*begin_.begin()=='!'){
@@ -216,14 +208,11 @@ bool read_pic_link(const std::string fname){
         if(!all_str.find_first_of("<p>")){
             all_str= all_str.substr(3);
         }
-        //    else if(final_string.find_last_of("</p>")==final_string.length()-1){
-        //        final_string+="</p>";
-        //    }
         if(all_str.find_last_of("</p>")==all_str.length()-1){
-            //            test=test.substr(0,test.length()-4)
-            //            std::cout<<"hello--------"<<std::endl;
+         
             all_str=all_str.substr(0,all_str.length()-4);
         }
+        dq.push_back(all_str);
         std::cout<<all_str;
     }
     if(end_!=""){
@@ -231,18 +220,12 @@ bool read_pic_link(const std::string fname){
         if(!all_str.find_first_of("<p>")){
             all_str= all_str.substr(3);
         }
-        //    else if(final_string.find_last_of("</p>")==final_string.length()-1){
-        //        final_string+="</p>";
-        //    }
-//        auto i=all_str.find_last_of("</p>");
-//        auto j=all_str.length()-1;
-//        std::cout<<"i  "<<i<<"j   "<<j;
+       
         if(all_str.find_last_of("</p>")==all_str.length()-1){
-            //            test=test.substr(0,test.length()-4)
-//            std::cout<<"hello--------"<<std::endl;
+      
             all_str=all_str.substr(0,all_str.length()-4);
         }
-        
+         dq.push_back(all_str);
         std::cout<<all_str<<std::endl;    }
     return true;
 }
@@ -262,20 +245,20 @@ void scanning_head(const std::string& allstr,std::string &read){
         string_removespace(begin_str);
 //        begin_str="<p>"+begin_str+"</p>";
         read+=begin_str;
-//    std::cout<<begin_str<<std::endl;
+
    }
 }
 ////最后归结为  下划  删除 高亮  普通字体 ```   ``  **    ** **    一起出现的情况
 std::string read_all(std::string allstr){
     std::string final_string;
 //    char specail[]={'*','_','~','=','`'};
-    scanning_head(allstr,final_string);
+   scanning_head(allstr,final_string);
     std::string::iterator sit=allstr.begin()-1;
     for(auto item=allstr.begin();item!=allstr.end();++item){
-//        std::cout<<(*item)<<std::endl;
+
         switch (*item) {
             case '*':
-//                std::cout<<"*"<<std::endl;
+
                 if(sit==allstr.begin()-1){
                     if(*(item+1)=='*'){
                         item+=2;
@@ -295,7 +278,6 @@ std::string read_all(std::string allstr){
                     else {
                         tmp="<i>"+tmp+"</i>";
                     }
-//                     std::cout<<tmp<<std::endl;
                     final_string+=tmp;
                     if(*(item+1)){
                         auto index=*std::find(vec.begin(), vec.end(), *(item+1));
@@ -308,8 +290,7 @@ std::string read_all(std::string allstr){
                             alpha_common=alpha_common+* item;
                         }
                     }                    if(alpha_common!=""){
-//                        alpha_common="<p>"+alpha_common+"</p>";
-//                        std::cout<<alpha_common<<std::endl;
+
                         final_string+=alpha_common;
                     }
                      sit=allstr.begin()-1;
@@ -324,7 +305,7 @@ std::string read_all(std::string allstr){
                        std::string tmp(sit,item);
                         std::string alpha_common;
                         tmp="<i>"+tmp+"</i>";
-                    //                     std::cout<<tmp<<std::endl;
+                    
                     final_string+=tmp;
                     if(*(item+1)){
                         auto index=*std::find(vec.begin(), vec.end(), *(item+1));
@@ -337,8 +318,7 @@ std::string read_all(std::string allstr){
                             alpha_common=alpha_common+* item;
                         }
                     }                    if(alpha_common!=""){
-                        //                        alpha_common="<p>"+alpha_common+"</p>";
-                        //                        std::cout<<alpha_common<<std::endl;
+                        
                         final_string+=alpha_common;
                     }
                        sit=allstr.begin()-1;
@@ -356,7 +336,7 @@ std::string read_all(std::string allstr){
                     std::string alpha_common;
                     tmp="<del>"+tmp+"</del>";
                     final_string+=tmp;
-//                    std::cout<<tmp<<std::endl;
+
                     item++;
                     if(*(item+1)){
                         auto index=*std::find(vec.begin(), vec.end(), *(item+1));
@@ -370,15 +350,15 @@ std::string read_all(std::string allstr){
                         }
                     }
                     if(alpha_common!=""){
-//                        alpha_common="<p>"+alpha_common+"</p>";
+
                         final_string+=alpha_common;
-//                        std::cout<<alpha_common<<std::endl;
+
                     }
                     sit=allstr.begin()-1;
                 }
                 break;
             case '=':
-//                std::cout<<"="<<std::endl;
+
                 if(sit==allstr.begin()-1){
                     item+=2;
                     sit=item;
@@ -388,7 +368,7 @@ std::string read_all(std::string allstr){
                     std::string alpha_common;
                      tmp="<mark>"+tmp+"</mark>";
                     final_string+=tmp;
-//                    std::cout<<tmp<<std::endl;
+
                     item++;
                     if(*(item+1)){
                         auto index=*std::find(vec.begin(), vec.end(), *(item+1));
@@ -402,15 +382,15 @@ std::string read_all(std::string allstr){
                         }
                     }
                     if(alpha_common!=""){
-//                        alpha_common="<p>"+alpha_common+"</p>";
+
                         final_string+=alpha_common;
-//                        std::cout<<alpha_common<<std::endl;
+
                     }
                     sit=allstr.begin()-1;
                 }
                 break;
             case '`':
-//                std::cout<<"`"<<std::endl;
+
                 if(sit==allstr.begin()-1){
                     if(*(item+2)=='`'){
                         item+=3;
@@ -428,7 +408,7 @@ std::string read_all(std::string allstr){
                     }
                     tmp="<code>"+tmp+"</code>";
                     final_string+=tmp;
-//                    std::cout<<tmp<<std::endl;
+
                     if(*(item+1)){
                         auto index=*std::find(vec.begin(), vec.end(), *(item+1));
                         while(item!=allstr.end()-1){
@@ -441,9 +421,9 @@ std::string read_all(std::string allstr){
                         }
                     }
                     if(alpha_common!=""){
-//                        alpha_common="<p>"+alpha_common+"</p>";
+
                         final_string+=alpha_common;
-//                        std::cout<<alpha_common<<std::endl;
+
                     }
                     sit=allstr.begin()-1;
                 }
@@ -452,33 +432,31 @@ std::string read_all(std::string allstr){
         
         
     }
-//    std::cout<<final_string<<std::endl;
-    
-//    if(final_string.find_first_of("<p>")){
-//        final_string="<p>"+final_string;
-//    }
-//    else if(final_string.find_last_of("</p>")==final_string.length()-1){
-//        final_string+="</p>";
-//    }
     final_string="<p>"+final_string+"</p>";
-//    std::cout<<final_string<<std::endl;
+
     return  final_string;
 }
 bool read_num(const std::string &str){
-    //(\\d\.\\s)((.*)*)
-    std::regex pieces_regex("(\\d\\.\\s)((.*)*)");
     std::smatch pieces_match;
-    if (std::regex_match(str, pieces_match, pieces_regex)) {
+    if (regex_builder(str, pieces_match,regex_node::num)) {
         std::string suffix= pieces_match[2].str();
         suffix=read_all(suffix);
-        suffix="1. "+suffix;
-        //        auto index=suffix.find_first_of("<li>");
-        //        suffix= suffix.substr(index);
-        std::cout<<std:: endl;
-        std::cout<<suffix<<"\n"<<std::endl;
-        return  true;
+        if(num_string.empty()){
+            num_string+="<li>"+suffix+"</li>";
+            num_string="<ol>"+num_string;
+        }else {
+        num_string+="<li>" +suffix+"</li>"+"\n";
+        }
+            return  true;
     }
-    return  false;
+    else {
+        if(!num_string.empty()){
+            num_string+="</ol>";
+            dq.push_back(num_string);
+            num_string.clear();
+        }
+         return  false;
+    }
 }
 
 
