@@ -33,9 +33,9 @@ void transform_md( std::string &line){
             if(line==""){
                 continue;
             }
-//            if(!line.find_first_of(" ")||!line.find_first_of("\t")){
-//                continue;
-//            }
+            if(!line.find_first_of(" ")||!line.find_first_of("\t")){
+                continue;
+            }
         
             analyze_sentence(line);
         }
