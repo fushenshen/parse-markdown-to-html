@@ -8,7 +8,19 @@
 
 #ifndef regex_build_hpp
 #define regex_build_hpp
+#include "symbol_md.hpp"
+#include <regex>
+#include <string>
+#include <iostream>
+enum regex_node{
+    num=0,
+    sharp,
+    ref,
+    pic_link,
+    pic  ,
+    ui
+};
+    bool regex_builder(const std::string &str,std::smatch &match ,regex_node node_type);
 
-#include <stdio.h>
 
 #endif /* regex_build_hpp */

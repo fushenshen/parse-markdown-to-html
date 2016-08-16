@@ -8,8 +8,8 @@
 
 #include <fstream>
 #include "symbol_md.hpp"
+using namespace std ;
 int main(){
-    using namespace std ;
     string line;
     ifstream myfile ("/Users/fushenshen/Documents/test.md");
     cout<<head<<endl;
