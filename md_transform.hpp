@@ -13,7 +13,7 @@
 #include <string>
 #include <fstream>
 #include "symbol_md.hpp"
-
+#include "entended_feature.hpp"
 void transform_md( std::string &line);
  void  trans_meaning(std::string &line);
 void read_tohtml(std::string line_,std::string out_file);
