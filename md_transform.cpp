@@ -7,6 +7,7 @@
 //
 
 #include "md_transform.hpp"
+extern std::deque<std::string> dq;
 void  trans_meaning(std::string &line){
     for(auto it=line.begin();
         it!=line.end();
@@ -34,51 +35,61 @@ void transform_md( std::string &line){
         
         while( getline (myfile,line))
         {
+            
             if(line==""){
                 continue;
             }
 //            if(!line.find_first_of(" ")||!line.find_first_of("\t")){
 //                continue;
 //            }
-            //表头
-//            if(read_form(line)){
-//                if(!flag){
-//                //  table \n thead\n tr\n  结束时  </tr>  </thead>
-//                std::deque<std::string> dq_form= form_content(line);
-//                line+="<table>\n<thead>\n<tr>\n";
-//                for(auto str_tmp:dq_form){
-//                    line+="<th>"+str_tmp+"</th>"+"\n";
-//                }
-//                line=line+"</tr>\n"+"</thead>\n\n<tbody>";
-//                flag=flag+1;
-//                }
-//                else {
-//                    std::deque<std::string>dq_form = form_content(line);
-//                    if(!dq_form.empty()){
-//                        line+="<tr>\n";
-//                        for(auto str_tmp:dq_form){
-//                            line+="<th>"+str_tmp+"</th>"+"\n";
-//                        }
-//                        line=line+"</tr>\n";
-//                    }
-//                }
-//                continue;
-//            }
-//           //得到整个表格的line
-//            flag=0;
-//            line+="</tbody>\n</table>\n";
+
+            if(read_form(line)){
+                if(!flag){
+                form_str.clear();
+                std::deque<std::string> dq_form= form_content(line);
+               form_str+="<table>\n<thead>\n<tr>\n";
+                for(auto str_tmp:dq_form){
+                    string_removespace(str_tmp);
+                    form_str+="<th>"+str_tmp+"</th>"+"\n";
+//
+                }
+               
+                form_str=form_str+"</tr>\n"+"</thead>\n\n<tbody>\n";
+//                std::cout<<form_str<<std::endl;
+                flag=flag+1;
+                }
+                else {
+                    std::deque<std::string>dq_form = form_content(line);
+                    if(!dq_form.empty()){
+                       form_str+="<tr>\n";
+                        for(auto str_tmp:dq_form){
+                           form_str+="<td>"+str_tmp+"</td>"+"\n";
+                        }
+                       form_str=form_str+"</tr>\n";
+                    }
+                }
+            
+                continue;
+            }
+           
+           //得到整个表格的line
+            if(flag==1){
+                flag=0;
+                form_str+="</tbody>\n</table>\n";
+                dq.push_back(form_str);
+            }
+
             analyze_sentence(line);
             
         }
         
     }
     dq.push_back(foot);
-    std::cout<<foot<<std::endl;
+    
 }
 
 void read_tohtml(std::string line_,std::string out_file){
     transform_md(line_);
-    extern std::deque<std::string> dq;
     std::ofstream out(out_file);
     if (out.is_open()){
         for(auto &sq:dq){

@@ -8,9 +8,17 @@
 
 #include "symbol_md.hpp"
 std::deque<std::string> dq;
-inline void string_removespace(std::string &str){
+ void string_removespace(std::string &str){
   str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
 }
+//bool is_form(std::string &str){
+//    std::regex pieces_regex("<table>");
+//    std::smatch match;
+//    if (std::regex_match(str, match, pieces_regex)){
+//        return true;
+//    }
+//    return  false;
+//}
 bool ref_complex(std::string &str){
     if(str.front()=='>'){
         auto string_final= read_all(std::string(str.begin()+1,str.end()));
